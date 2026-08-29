@@ -273,6 +273,49 @@ static bool scan_closing_comment(TSLexer *lexer) {
     return true;
 }
 
+static inline bool is_ascii_digit(int32_t c) { return c >= '0' && c <= '9'; }
+
+static inline bool is_ascii_hex_digit(int32_t c) {
+    return is_ascii_digit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+}
+
+static inline bool is_ascii_alpha(int32_t c) {
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+
+// Probe, from the `&`, for a complete html_character_reference — the grammar
+// spells it /&(#([xX][0-9a-fA-F]{1,6}|[0-9]{1,5})|[A-Za-z]{1,30});/ and this
+// must agree with it exactly. Always consumes the `&`, and never advances past
+// a character the reference could not contain, so a caller that continues
+// scanning on a false result is still positioned inside JSX text.
+static bool scan_html_character_reference(TSLexer *lexer) {
+    advance(lexer);  // the '&'
+
+    unsigned count = 0;
+    if (lexer->lookahead == '#') {
+        advance(lexer);
+        if (lexer->lookahead == 'x' || lexer->lookahead == 'X') {
+            advance(lexer);
+            while (count < 6 && is_ascii_hex_digit(lexer->lookahead)) {
+                advance(lexer);
+                count++;
+            }
+        } else {
+            while (count < 5 && is_ascii_digit(lexer->lookahead)) {
+                advance(lexer);
+                count++;
+            }
+        }
+    } else {
+        while (count < 30 && is_ascii_alpha(lexer->lookahead)) {
+            advance(lexer);
+            count++;
+        }
+    }
+
+    return count > 0 && lexer->lookahead == ';';
+}
+
 static bool scan_jsx_text(TSLexer *lexer) {
     // saw_text will be true if we see any non-whitespace content, or any whitespace content that is not a newline and
     // does not immediately follow a newline.
@@ -280,9 +323,26 @@ static bool scan_jsx_text(TSLexer *lexer) {
     // at_newline will be true if we are currently at a newline, or if we are at whitespace that is not a newline but
     // immediately follows a newline.
     bool at_newline = false;
+    // Set once we have stopped in front of a real character reference and
+    // pinned the token end behind its `&`.
+    bool end_marked = false;
 
     while (lexer->lookahead != 0 && lexer->lookahead != '<' && lexer->lookahead != '>' && lexer->lookahead != '{' &&
-           lexer->lookahead != '}' && lexer->lookahead != '&') {
+           lexer->lookahead != '}') {
+        // `&` only ends the text when it actually opens a character reference.
+        // A bare `&` is ordinary JSX text — `<div>Tom & Jerry</div>` is valid
+        // JSX, and stopping here unconditionally left it unparsable.
+        if (lexer->lookahead == '&') {
+            lexer->mark_end(lexer);
+            if (scan_html_character_reference(lexer)) {
+                end_marked = true;
+                break;
+            }
+            saw_text = true;
+            at_newline = false;
+            continue;
+        }
+
         bool is_wspace = iswspace(lexer->lookahead);
         if (lexer->lookahead == '\n') {
             at_newline = true;
@@ -310,6 +370,9 @@ static bool scan_jsx_text(TSLexer *lexer) {
         advance(lexer);
     }
 
+    if (!end_marked) {
+        lexer->mark_end(lexer);
+    }
     lexer->result_symbol = JSX_TEXT;
     return saw_text;
 }
