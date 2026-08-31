@@ -1,0 +1,85 @@
+# Build the Python wheels the Featureflip flag-cleanup Action installs.
+#
+# WHY THIS FORK HAS ITS OWN WHEEL PIPELINE
+# ----------------------------------------
+# This branch is upstream 0.23.2 plus one external-scanner patch: `scan_jsx_text`
+# stopped at every `&`, so a bare `&` in JSX text -- `<p>Terms & Conditions</p>`,
+# which `tsc` accepts -- parsed as an error. polyglot-piranha pins this exact
+# commit, so its ENGINE has the patched grammar.
+#
+# The Action re-parses every rewrite with the `tree-sitter-typescript` PyPI
+# package as a safety gate. If that gate keeps the stock grammar while the
+# engine has the patched one, the two disagree about what valid code looks
+# like, and the gate refuses correct rewrites -- which abandons the whole flag.
+# So the gate needs THIS grammar, as a wheel, and PyPI has no such build.
+#
+# The version carries a PEP 440 local segment (`0.23.2+canopy.1`). That is what
+# makes the Action's pin unambiguous: PyPI forbids local versions, so
+# `==0.23.2+canopy.1` can only ever be satisfied by a wheel from this release
+# and never silently by upstream's identically-numbered 0.23.2.
+name: Canopy wheels
+
+on:
+  push:
+    tags: ['v*-canopy.*']
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  wheels:
+    name: ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Native runners for both arches -- no QEMU. The arm64 runner is
+          # free on public repositories, which this fork is.
+          - { runner: ubuntu-latest,    arch: x86_64 }
+          - { runner: ubuntu-24.04-arm, arch: aarch64 }
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pypa/cibuildwheel@v4.2
+        env:
+          # `build = "cp39-*"` in pyproject.toml plus setup.py's BdistWheel tag
+          # override means ONE abi3 wheel per arch, installable on 3.9-3.14.
+          # The Action runs 3.12; pinning the build to cp39 keeps that free.
+          CIBW_ARCHS_LINUX: ${{ matrix.arch }}
+          # manylinux only. The Action's image is python:3.12-slim (glibc), and
+          # a musllinux build would double the matrix for a wheel nothing installs.
+          CIBW_SKIP: '*-musllinux_*'
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: wheels-${{ matrix.arch }}
+          path: wheelhouse/*.whl
+
+  release:
+    needs: wheels
+    runs-on: ubuntu-latest
+    # Tags only. A `workflow_dispatch` run is for checking the build still
+    # works, and `GITHUB_REF_NAME` is then the BRANCH -- so without this the
+    # dispatch would try to cut a release named `canopy/wheels-0.23.2`.
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Show what will be published
+        run: ls -la dist
+
+      # Both arches or nothing: `needs` already gates this on the whole matrix,
+      # so a partial release cannot be produced by one arch failing.
+      - name: Publish the wheels on this tag's release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/*.whl \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$GITHUB_REF_NAME" \
+            --notes "Upstream 0.23.2 plus the bare-\`&\`-in-JSX-text scanner patch, built as abi3 manylinux wheels for the Featureflip flag-cleanup Action. Not a PyPI release: the version carries a PEP 440 local segment so it can only be installed by exact pin."
