@@ -21,9 +21,9 @@
 # like, and the gate refuses correct rewrites -- which abandons the whole flag.
 # So the gate needs THIS grammar, as a wheel, and PyPI has no such build.
 #
-# The version carries a PEP 440 local segment (`0.23.2+canopy.2`). That is what
+# The version carries a PEP 440 local segment (`0.23.2+canopy.3`). That is what
 # makes the Action's pin unambiguous: PyPI forbids local versions, so
-# `==0.23.2+canopy.2` can only ever be satisfied by a wheel from this release
+# `==0.23.2+canopy.3` can only ever be satisfied by a wheel from this release
 # and never silently by upstream's identically-numbered 0.23.2. Bump the local
 # segment whenever the engine's pinned commit moves -- the grammar version
 # itself stays 0.23.2, so it is the only thing that can distinguish the builds.
@@ -92,4 +92,4 @@ jobs:
           gh release create "$GITHUB_REF_NAME" dist/*.whl \
             --repo "$GITHUB_REPOSITORY" \
             --title "$GITHUB_REF_NAME" \
-            --notes "Upstream 0.23.2 plus the two grammar patches polyglot-piranha pins -- the bare-\`&\`-in-JSX-text scanner fix and the \`accessor\` modifier/member-name fix -- built as abi3 manylinux wheels for the Featureflip flag-cleanup Action. Not a PyPI release: the version carries a PEP 440 local segment so it can only be installed by exact pin."
+            --notes "Upstream 0.23.2 plus the three grammar patches polyglot-piranha pins -- the bare-\`&\`-in-JSX-text scanner fix, the \`accessor\` modifier/member-name fix, and \`import('m')\`/\`typeof import('m')\` as the first type argument of a call -- built as abi3 manylinux wheels for the Featureflip flag-cleanup Action. Not a PyPI release: the version carries a PEP 440 local segment so it can only be installed by exact pin."
