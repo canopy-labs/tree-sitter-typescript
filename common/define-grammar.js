@@ -210,6 +210,15 @@ module.exports = function defineGrammar(dialect) {
           field('function', choice($.primary_expression, $.new_expression)),
           field('arguments', $.template_string),
         )),
+        // A tagged template with type arguments, `sql<{ a: string }>`x``. It is
+        // spelled like a call, not like the template above: the callee is an
+        // `expression` here, which is what lets the parser keep `f<T>` open as
+        // either a call, an instantiation expression or this.
+        prec('call', seq(
+          field('function', $.expression),
+          field('type_arguments', $.type_arguments),
+          field('arguments', $.template_string),
+        )),
         prec('member', seq(
           field('function', $.primary_expression),
           '?.',
