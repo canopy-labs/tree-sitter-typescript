@@ -3760,53 +3760,57 @@
       "type": "CHOICE",
       "members": [
         {
-          "type": "PREC",
-          "value": "call",
+          "type": "PREC_DYNAMIC",
+          "value": 2,
           "content": {
-            "type": "SEQ",
-            "members": [
-              {
-                "type": "FIELD",
-                "name": "function",
-                "content": {
-                  "type": "CHOICE",
-                  "members": [
-                    {
-                      "type": "SYMBOL",
-                      "name": "expression"
-                    },
-                    {
-                      "type": "SYMBOL",
-                      "name": "import"
-                    }
-                  ]
+            "type": "PREC",
+            "value": "call",
+            "content": {
+              "type": "SEQ",
+              "members": [
+                {
+                  "type": "FIELD",
+                  "name": "function",
+                  "content": {
+                    "type": "CHOICE",
+                    "members": [
+                      {
+                        "type": "SYMBOL",
+                        "name": "expression"
+                      },
+                      {
+                        "type": "SYMBOL",
+                        "name": "import"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "type": "FIELD",
+                  "name": "type_arguments",
+                  "content": {
+                    "type": "CHOICE",
+                    "members": [
+                      {
+                        "type": "SYMBOL",
+                        "name": "type_arguments"
+                      },
+                      {
+                        "type": "BLANK"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "type": "FIELD",
+                  "name": "arguments",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "arguments"
+                  }
                 }
-              },
-              {
-                "type": "FIELD",
-                "name": "type_arguments",
-                "content": {
-                  "type": "CHOICE",
-                  "members": [
-                    {
-                      "type": "SYMBOL",
-                      "name": "type_arguments"
-                    },
-                    {
-                      "type": "BLANK"
-                    }
-                  ]
-                }
-              },
-              {
-                "type": "FIELD",
-                "name": "arguments",
-                "content": {
-                  "type": "SYMBOL",
-                  "name": "arguments"
-                }
-              }
-            ]
+              ]
+            }
           }
         },
         {
@@ -3844,37 +3848,8 @@
           }
         },
         {
-          "type": "PREC",
-          "value": "call",
-          "content": {
-            "type": "SEQ",
-            "members": [
-              {
-                "type": "FIELD",
-                "name": "function",
-                "content": {
-                  "type": "SYMBOL",
-                  "name": "expression"
-                }
-              },
-              {
-                "type": "FIELD",
-                "name": "type_arguments",
-                "content": {
-                  "type": "SYMBOL",
-                  "name": "type_arguments"
-                }
-              },
-              {
-                "type": "FIELD",
-                "name": "arguments",
-                "content": {
-                  "type": "SYMBOL",
-                  "name": "template_string"
-                }
-              }
-            ]
-          }
+          "type": "SYMBOL",
+          "name": "_typed_template_call"
         },
         {
           "type": "PREC",
@@ -7505,6 +7480,48 @@
           ]
         }
       ]
+    },
+    "_typed_template_call": {
+      "type": "PREC_DYNAMIC",
+      "value": 1,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "FIELD",
+            "name": "function",
+            "content": {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "primary_expression"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "new_expression"
+                }
+              ]
+            }
+          },
+          {
+            "type": "FIELD",
+            "name": "type_arguments",
+            "content": {
+              "type": "SYMBOL",
+              "name": "type_arguments"
+            }
+          },
+          {
+            "type": "FIELD",
+            "name": "arguments",
+            "content": {
+              "type": "SYMBOL",
+              "name": "template_string"
+            }
+          }
+        ]
+      }
     },
     "_jsx_start_opening_element": {
       "type": "SEQ",
@@ -11202,6 +11219,10 @@
     [
       "call_expression",
       "_type_query_call_expression_in_type_annotation"
+    ],
+    [
+      "expression",
+      "_typed_template_call"
     ],
     [
       "call_expression",
