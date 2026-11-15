@@ -16,7 +16,7 @@
 #              plain ECMAScript, so a `.js` file is enough to hit it).
 #   dbac36b -- `import('m')` and `typeof import('m')` as the first type argument
 #              of a call.
-#   4921cc0 -- type arguments on a tagged template call
+#   470db2d -- type arguments on a tagged template call
 #              (`sql<{ value: string }>`...``), which left a MISSING node when
 #              the type argument could not be read as a comparison.
 #
@@ -26,9 +26,9 @@
 # like, and the gate refuses correct rewrites -- which abandons the whole flag.
 # So the gate needs THIS grammar, as a wheel, and PyPI has no such build.
 #
-# The version carries a PEP 440 local segment (`0.23.2+canopy.4`). That is what
+# The version carries a PEP 440 local segment (`0.23.2+canopy.5`). That is what
 # makes the Action's pin unambiguous: PyPI forbids local versions, so
-# `==0.23.2+canopy.4` can only ever be satisfied by a wheel from this release
+# `==0.23.2+canopy.5` can only ever be satisfied by a wheel from this release
 # and never silently by upstream's identically-numbered 0.23.2. Bump the local
 # segment whenever the engine's pinned commit moves -- the grammar version
 # itself stays 0.23.2, so it is the only thing that can distinguish the builds.
