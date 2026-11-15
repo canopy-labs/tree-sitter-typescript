@@ -2,7 +2,7 @@
 #
 # WHY THIS FORK HAS ITS OWN WHEEL PIPELINE
 # ----------------------------------------
-# This branch is upstream 0.23.2 plus the two grammar patches polyglot-piranha
+# This branch is upstream 0.23.2 plus the grammar patches polyglot-piranha
 # carries, and it is cut from the SAME commit the engine pins so the two cannot
 # drift:
 #
@@ -14,6 +14,11 @@
 #              so it could not follow `static`/`abstract`/`override`, and a
 #              class member NAMED `accessor` was refused outright (the latter is
 #              plain ECMAScript, so a `.js` file is enough to hit it).
+#   dbac36b -- `import('m')` and `typeof import('m')` as the first type argument
+#              of a call.
+#   4921cc0 -- type arguments on a tagged template call
+#              (`sql<{ value: string }>`...``), which left a MISSING node when
+#              the type argument could not be read as a comparison.
 #
 # The Action re-parses every rewrite with the `tree-sitter-typescript` PyPI
 # package as a safety gate. If that gate keeps the stock grammar while the
@@ -21,9 +26,9 @@
 # like, and the gate refuses correct rewrites -- which abandons the whole flag.
 # So the gate needs THIS grammar, as a wheel, and PyPI has no such build.
 #
-# The version carries a PEP 440 local segment (`0.23.2+canopy.3`). That is what
+# The version carries a PEP 440 local segment (`0.23.2+canopy.4`). That is what
 # makes the Action's pin unambiguous: PyPI forbids local versions, so
-# `==0.23.2+canopy.3` can only ever be satisfied by a wheel from this release
+# `==0.23.2+canopy.4` can only ever be satisfied by a wheel from this release
 # and never silently by upstream's identically-numbered 0.23.2. Bump the local
 # segment whenever the engine's pinned commit moves -- the grammar version
 # itself stays 0.23.2, so it is the only thing that can distinguish the builds.
@@ -92,4 +97,4 @@ jobs:
           gh release create "$GITHUB_REF_NAME" dist/*.whl \
             --repo "$GITHUB_REPOSITORY" \
             --title "$GITHUB_REF_NAME" \
-            --notes "Upstream 0.23.2 plus the three grammar patches polyglot-piranha pins -- the bare-\`&\`-in-JSX-text scanner fix, the \`accessor\` modifier/member-name fix, and \`import('m')\`/\`typeof import('m')\` as the first type argument of a call -- built as abi3 manylinux wheels for the Featureflip flag-cleanup Action. Not a PyPI release: the version carries a PEP 440 local segment so it can only be installed by exact pin."
+            --notes "Upstream 0.23.2 plus the four grammar patches polyglot-piranha pins -- the bare-\`&\`-in-JSX-text scanner fix, the \`accessor\` modifier/member-name fix, \`import('m')\`/\`typeof import('m')\` as the first type argument of a call, and type arguments on a tagged template call -- built as abi3 manylinux wheels for the Featureflip flag-cleanup Action. Not a PyPI release: the version carries a PEP 440 local segment so it can only be installed by exact pin."
